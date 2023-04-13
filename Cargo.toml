@@ -26,3 +26,4 @@ ee895 = "0.1.0"
 embedded-graphics = "0.7.1"
 embedded-hal = "0.2.7"
 shared-bus = { version = "0.2.5" }
+st7735-lcd = "0.8.1"
