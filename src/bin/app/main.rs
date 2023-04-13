@@ -57,17 +57,12 @@ fn main() -> ! {
     let mut system = peripherals.DPORT.split();
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
     let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
-    let mut timer0 = timer_group0.timer0;
 
     // init Watchdog and RTC
     let mut wdt = timer_group0.wdt;
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
     rtc.rwdt.disable();
     wdt.start(10u64.secs());
-
-    // set Timer
-    timer0.start(2u64.secs());
-
     // delay
     let mut delay = Delay::new(&clocks);
 
@@ -94,6 +89,8 @@ fn main() -> ! {
     let mut co2: f32;
     let mut temperature: f32;
     let mut pressure: f32;
+
+    println!("Hello World!");
 
     delay.delay_ms(4000u32);
     // onboard LED
