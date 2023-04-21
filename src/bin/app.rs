@@ -1,8 +1,7 @@
 #![no_std]
 #![no_main]
 
-extern crate alloc;
-use alloc::format;
+use core::fmt::Write;
 use ee895::EE895;
 use embedded_graphics::image::{Image, ImageRaw, ImageRawLE};
 use embedded_graphics::{
@@ -21,38 +20,14 @@ use esp32_hal::{
     timer::TimerGroup,
     Delay, Rtc,
 };
-
 use esp_backtrace as _;
 use esp_println::println;
-use nb::block;
+use heapless::String;
 use st7735_lcd;
 use st7735_lcd::Orientation;
 
-#[global_allocator]
-static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
-
-fn init_heap() {
-    const HEAP_SIZE: usize = 32 * 1024;
-
-    extern "C" {
-        static mut _heap_start: u32;
-        static mut _heap_end: u32;
-    }
-
-    unsafe {
-        let heap_start = &_heap_start as *const _ as usize;
-        let heap_end = &_heap_end as *const _ as usize;
-        assert!(
-            heap_end - heap_start > HEAP_SIZE,
-            "Not enough available heap memory."
-        );
-        ALLOCATOR.init(heap_start as *mut u8, HEAP_SIZE);
-    }
-}
-
 #[entry]
 fn main() -> ! {
-    init_heap();
     let peripherals = Peripherals::take();
     let mut system = peripherals.DPORT.split();
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
@@ -62,7 +37,8 @@ fn main() -> ! {
     let mut wdt = timer_group0.wdt;
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
     rtc.rwdt.disable();
-    wdt.start(10u64.secs());
+    wdt.disable();
+
     // delay
     let mut delay = Delay::new(&clocks);
 
@@ -92,7 +68,6 @@ fn main() -> ! {
 
     println!("Hello World!");
 
-    delay.delay_ms(4000u32);
     // onboard LED
     let mut led = io.pins.gpio2.into_push_pull_output();
     // SPI Display Settings
@@ -123,15 +98,18 @@ fn main() -> ! {
     display.set_offset(0, 0);
 
     let image_raw: ImageRawLE<Rgb565> =
-        ImageRaw::new(include_bytes!("../../../assets/ferris.raw"), 86);
+        ImageRaw::new(include_bytes!("../../assets/ferris.raw"), 86);
     display.clear(Rgb565::BLACK).unwrap();
     let image: Image<_> = Image::new(&image_raw, Point::new(34, 30));
     image.draw(&mut display).unwrap();
 
     delay.delay_ms(4000u32);
-    loop {
-        wdt.feed();
 
+    let mut co2_msg: String<20> = String::new();
+    let mut pressure_msg: String<20> = String::new();
+    let mut temperature_msg: String<20> = String::new();
+
+    loop {
         led.set_high().unwrap();
 
         co2 = sensor.read_co2().unwrap();
@@ -149,28 +127,31 @@ fn main() -> ! {
 
         display.clear(color).unwrap();
 
-        println!("CO2: {} ppm", co2);
-        println!("Warning: {}", warning);
-        println!("Temperature: {} C", temperature);
-        println!("Pressure: {} hPa", pressure);
+        co2_msg.clear();
+        temperature_msg.clear();
+        pressure_msg.clear();
+        write!(co2_msg, "CO2: {co2} ppm").unwrap();
+        write!(temperature_msg, "Temperature: {temperature} C").unwrap();
+        write!(pressure_msg, "Pressure: {pressure} hPa").unwrap();
 
-        Text::new(
-            &format!("CO2: {} ppm", co2),
-            Point::new(20, 30),
-            text_style_big,
-        )
-        .draw(&mut display)
-        .unwrap();
+        println!("{}", co2_msg);
+        println!("Warning: {}", warning);
+        println!("{}", temperature_msg);
+        println!("{}", pressure_msg);
+
+        Text::new(co2_msg.as_str(), Point::new(20, 30), text_style_big)
+            .draw(&mut display)
+            .unwrap();
 
         Text::new(warning, Point::new(20, 55), text_style_big)
             .draw(&mut display)
             .unwrap();
 
-        Text::new(&format!("T: {} °C", temperature), Point::new(20, 80), style)
+        Text::new(temperature_msg.as_str(), Point::new(20, 80), style)
             .draw(&mut display)
             .unwrap();
 
-        Text::new(&format!("p: {} hPa", pressure), Point::new(20, 105), style)
+        Text::new(pressure_msg.as_str(), Point::new(20, 105), style)
             .draw(&mut display)
             .unwrap();
 
