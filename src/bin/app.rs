@@ -132,27 +132,27 @@ fn main() -> ! {
         temperature_msg.clear();
         pressure_msg.clear();
         write!(co2_msg, "CO2: {co2} ppm").unwrap();
-        write!(temperature_msg, "Temperature: {temperature} C").unwrap();
-        write!(pressure_msg, "Pressure: {pressure} hPa").unwrap();
+        write!(temperature_msg, "Temp: {temperature} C").unwrap();
+        write!(pressure_msg, "Pres: {pressure} hPa").unwrap();
 
         println!("{}", co2_msg);
         println!("Warning: {}", warning);
         println!("{}", temperature_msg);
         println!("{}", pressure_msg);
 
-        Text::new(co2_msg.as_str(), Point::new(20, 30), text_style_big)
+        Text::new(co2_msg.as_str(), Point::new(05, 30), text_style_big)
             .draw(&mut display)
             .unwrap();
 
-        Text::new(warning, Point::new(20, 55), text_style_big)
+        Text::new(warning, Point::new(05, 55), text_style_big)
             .draw(&mut display)
             .unwrap();
 
-        Text::new(temperature_msg.as_str(), Point::new(20, 80), style)
+        Text::new(temperature_msg.as_str(), Point::new(05, 80), style)
             .draw(&mut display)
             .unwrap();
 
-        Text::new(pressure_msg.as_str(), Point::new(20, 105), style)
+        Text::new(pressure_msg.as_str(), Point::new(05, 105), style)
             .draw(&mut display)
             .unwrap();
 
