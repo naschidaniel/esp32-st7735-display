@@ -37,7 +37,7 @@ fn main() -> ! {
     let mut wdt = timer_group0.wdt;
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
     rtc.rwdt.disable();
-    wdt.disable();
+    wdt.start(10u64.secs());
 
     // delay
     let mut delay = Delay::new(&clocks);
@@ -110,6 +110,7 @@ fn main() -> ! {
     let mut temperature_msg: String<20> = String::new();
 
     loop {
+        wdt.feed();
         led.set_high().unwrap();
 
         co2 = sensor.read_co2().unwrap();
